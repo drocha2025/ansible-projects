@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 - name: Configure SVI on C800v Router
   hosts: all
@@ -17,4 +18,25 @@
 
     - name: Save config if modified
       cisco.ios.ios_config:
+=======
+---
+- name: Configure SVI on C800v Router
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  vars:
+    vlan_id: 100
+    svi_mask: 255.255.255.0
+
+  tasks:
+    - name: Configure SVI interface
+      cisco.ios.ios_config:
+        lines:
+          - "interface Vlan{{ vlan_id }}"
+          - "ip address {{ svi_ip }} {{ svi_mask }}"
+          - "no shutdown"
+
+    - name: Save config if modified
+      cisco.ios.ios_config:
+>>>>>>> 71579013ceb74eacfdb5497cbdd634346bfe5746
         save_when: modified

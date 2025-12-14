@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 all:
   hosts:
     router1:
@@ -13,3 +14,20 @@ all:
       ansible_password: automation
       ansible_network_os: cisco.ios.ios
       ansible_connection: network_cli
+=======
+all:
+  hosts:
+    router1:
+      ansible_host: 192.168.1.10   # Router1 management IP (Gi0/1)
+      ansible_user: admin
+      ansible_password: automation
+      ansible_network_os: cisco.ios.ios
+      ansible_connection: network_cli
+
+    router2:
+      ansible_host: 192.168.1.11   # Router2 management IP (Gi0/1)
+      ansible_user: admin
+      ansible_password: automation
+      ansible_network_os: cisco.ios.ios
+      ansible_connection: network_cli
+>>>>>>> 71579013ceb74eacfdb5497cbdd634346bfe5746

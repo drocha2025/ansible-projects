@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 all:
   hosts:
     hub:
@@ -21,3 +22,28 @@ all:
     ansible_password: automation
     ansible_network_os: cisco.ios.ios
     ansible_connection: ansible.netcommon.network_cli
+=======
+all:
+  hosts:
+    hub:
+      ansible_host: 192.168.1.10
+      ansible_port: 22       # Hub itself on default SSH port
+      svi_ip: 192.168.100.1
+    spoke1:
+      ansible_host: 192.168.1.10
+      ansible_port: 2222     # Port forwarded to 10.0.2.1:22
+      svi_ip: 192.168.100.2
+    spoke2:
+      ansible_host: 192.168.1.10
+      ansible_port: 2223     # Port forwarded to 10.0.3.1:22
+      svi_ip: 192.168.100.3
+    spoke3:
+      ansible_host: 192.168.1.10
+      ansible_port: 2224     # Port forwarded to 10.0.4.1:22
+      svi_ip: 192.168.100.4
+  vars:
+    ansible_user: admin
+    ansible_password: automation
+    ansible_network_os: cisco.ios.ios
+    ansible_connection: ansible.netcommon.network_cli
+>>>>>>> 71579013ceb74eacfdb5497cbdd634346bfe5746
