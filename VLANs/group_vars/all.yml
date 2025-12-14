@@ -1,15 +1,6 @@
-<<<<<<< HEAD
 vlans:
   - { id: 10, name: "SALES" }
   - { id: 20, name: "HR" }
   - { id: 30, name: "ENGINEERING" }
   - { id: 40, name: "SERVERS" }
   - { id: 50, name: "MANAGEMENT" }
-=======
-vlans:
-  - { id: 10, name: "SALES" }
-  - { id: 20, name: "HR" }
-  - { id: 30, name: "ENGINEERING" }
-  - { id: 40, name: "SERVERS" }
-  - { id: 50, name: "MANAGEMENT" }
->>>>>>> 71579013ceb74eacfdb5497cbdd634346bfe5746
