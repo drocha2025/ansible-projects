@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from getpass import getpass
 import requests
 import urllib3
@@ -68,5 +67,4 @@ rsp = requests.get(url, headers=catalyst_center_headers, verify=False)
 products = rsp.json()["response"]
 
 for product in products:
->>>>>>> 71579013ceb74eacfdb5497cbdd634346bfe5746
     print(product["productName"])
