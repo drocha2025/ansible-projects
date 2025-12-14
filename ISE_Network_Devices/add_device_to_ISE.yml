@@ -1,0 +1,51 @@
+---
+# add_device_to_ISE.yml – FINAL, CLEAN, IDEMPOTENT, NO ERRORS EVER
+
+- hosts: localhost                # Run this playbook only on the local machine
+  connection: local               # Use a local connection (no SSH needed)
+  gather_facts: false             # Skip collecting system facts to speed up the playbook
+
+  tasks:                          # Start of the list of tasks
+
+    - name: Add R1 to ISE (TACACS+) – idempotent
+      uri:                        # Use Ansible's URI module to make an HTTP request
+        url: https://192.168.1.60/ers/config/networkdevice  # Cisco ISE ERS API endpoint for network devices
+        method: POST              # HTTP POST method to create a new network device
+        user: ERS_admin           # ERS API username
+        password: Cisco12345      # ERS API password
+        force_basic_auth: yes     # Ensure HTTP Basic Auth is always used
+        validate_certs: no        # Ignore SSL certificate validation (useful for lab/self-signed certs)
+        return_content: yes       # Return the response body for use in tasks
+        headers:                  # HTTP headers to specify JSON content
+          Accept: application/json
+          Content-Type: application/json
+        status_code:              # Acceptable HTTP status codes
+          - 201   # success – device created
+          - 400   # already exists – considered fine for idempotency
+        body_format: json          # Format the body as JSON automatically
+        body:                      # The payload sent to the API
+          NetworkDevice:
+            name: R1               # Name of the network device to add
+            NetworkDeviceIPList:   # List of IP addresses for this device
+              - ipaddress: 192.168.1.10  # Device IP address
+                mask: 24                  # Subnet mask in CIDR format
+            authenticationSettings:        # Authentication protocol settings
+              networkProtocol: TACACS_PLUS # Use TACACS+
+              radiusSharedSecret: dummy123 # Radius secret (not used here, but required by API)
+            tacacsSettings:               # TACACS+ specific settings
+              sharedSecret: cisco123      # TACACS+ shared secret
+              connectModeOptions: ON_LEGACY # Connection mode option
+      register: result                 # Save the API response in 'result' variable
+      changed_when: result.status == 201  # Mark task as "changed" only if a new device was created
+      failed_when: >                   # Mark task as failed if creation fails for any reason except "already exists"
+        result.status != 201 and
+        "Device Name Already Exist" not in result.content
+
+    - name: Result message
+      debug:                         # Print a message based on the API result
+        msg: >-                      # Use Jinja2 template for conditional message
+          {% if result.status == 201 %}
+          R1 SUCCESSFULLY ADDED TO ISE
+          {% else %}
+          R1 already exists in ISE – nothing to do
+          {% endif %}

@@ -1,0 +1,24 @@
+- name: Configure trunk ports on all switches   # A descriptive name for the playbook
+  hosts: switches                               # Target group of devices defined in inventory
+  gather_facts: no                               # Skip gathering facts about devices (faster)
+  connection: network_cli                        # Use SSH/CLI connection to network devices
+
+  vars:                                         # Define variables used in the playbook
+    ansible_user: admin                          # Username to log into the switches
+    ansible_password: cisco                      # Password to log into the switches
+    ansible_network_os: cisco.ios.ios            # Specify the network OS module for Cisco IOS devices
+    trunk_interfaces:                             # List of interfaces to configure as trunks
+      - gi0/1
+      - gi0/2
+
+  tasks:                                         # Start of the tasks section
+    - name: Configure trunk interfaces          # Descriptive name for this task
+      cisco.ios.ios_config:                      # Ansible module to configure IOS devices
+        lines:                                   # List of configuration commands to apply
+          - switchport trunk encapsulation dot1q   # Set trunk encapsulation to 802.1Q
+          - switchport mode trunk                   # Set the interface to trunk mode
+          - switchport trunk allowed vlan all      # Allow all VLANs on the trunk
+          - no shutdown                            # Ensure the interface is administratively up
+        parents: "interface {{ item }}"          # Apply the commands under the correct interface context
+        save_when: modified                       # Save the configuration only if changes were made
+      loop: "{{ trunk_interfaces }}"             # Loop over all interfaces defined in the trunk_interfaces list

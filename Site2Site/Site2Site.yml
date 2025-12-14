@@ -1,0 +1,66 @@
+---
+- name: Configure Site-to-Site VPN on Router
+  hosts: router1
+  gather_facts: no
+  connection: network_cli
+  vars:
+    # Interfaces
+    int_to_peer: GigabitEthernet0/2
+
+    # IP addresses (adjust as needed)
+    peer_ip: 10.0.12.2
+
+    # VPN configuration
+    preshared_key: MySecretKey123
+    local_subnet: 192.168.10.0 255.255.255.0
+    remote_subnet: 192.168.20.0 255.255.255.0
+    transform_set_name: TS_VPN
+    crypto_map_name: CRYPTO_VPN
+    crypto_seq: 10
+
+  tasks:
+    - name: Configure IKEv1 keyring
+      cisco.ios.ios_config:
+        lines:
+          - "crypto keyring VPN_KEYRING"
+          - "  pre-shared-key address {{ peer_ip }} key {{ preshared_key }}"
+
+    - name: Configure IKEv1 policy
+      cisco.ios.ios_config:
+        lines:
+          - "crypto isakmp policy 10"
+          - " encryption aes"
+          - " hash sha"
+          - " authentication pre-share"
+          - " group 2"
+
+    - name: Configure IPsec transform set
+      cisco.ios.ios_config:
+        lines:
+          - "crypto ipsec transform-set {{ transform_set_name }} esp-aes esp-sha-hmac"
+
+    - name: Configure crypto map
+      cisco.ios.ios_config:
+        lines:
+          - "crypto map {{ crypto_map_name }} {{ crypto_seq }} ipsec-isakmp"
+          - " set peer {{ peer_ip }}"
+          - " set transform-set {{ transform_set_name }}"
+          - " match address 101"
+
+    - name: Configure access-list for VPN traffic
+      cisco.ios.ios_config:
+        lines:
+          - "ip access-list extended 101"
+          - " permit ip {{ local_subnet }} {{ remote_subnet }}"
+
+    - name: Apply crypto map to interface and no shutdown
+      cisco.ios.ios_config:
+        lines:
+          - "interface {{ int_to_peer }}"
+          - " crypto map {{ crypto_map_name }}"
+          - " no shutdown"
+
+    - name: Save running configuration
+      cisco.ios.ios_command:
+        commands:
+          - "write memory"

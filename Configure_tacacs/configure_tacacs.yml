@@ -1,0 +1,19 @@
+---
+- name: Configure AAA TACACS+ on Cisco Router
+  hosts: routers
+  gather_facts: no
+  connection: network_cli
+
+  tasks:
+    - name: Configure TACACS and AAA
+      ios_config:
+        lines:
+          - aaa new-model
+          - tacacs server ISE-TACACS
+          - address ipv4 192.168.1.60
+          - key cisco123          # <-- change to your TACACS key
+          - aaa authentication login default group tacacs+ local
+          - aaa authorization exec default group tacacs+ local if-authenticated
+          - aaa accounting exec default start-stop group tacacs+
+          - aaa accounting commands 15 default start-stop group tacacs+
+        save_when: modified

@@ -1,0 +1,71 @@
+---
+- name: Configure port-channels sequentially         # Playbook description
+  hosts: switches                                    # Target all switches in inventory group
+  serial: 1                                          # Run on one switch at a time
+  gather_facts: no                                   # Skip fact gathering (faster)
+  connection: network_cli                            # Use CLI over SSH for Cisco IOS
+
+  vars:
+    ansible_user: admin                              # Username for device login
+    ansible_password: cisco                          # Password for device login
+    ansible_network_os: cisco.ios.ios                # Cisco IOS collection
+    ansible_become: yes                              # Enable privilege escalation
+    ansible_become_method: enable                    # Use "enable" mode
+
+    # Define port-channels per switch                # Port-channel mapping per device
+    switch_port_channels:
+      SW1:
+        - id: 12                                     # Port-channel 12 on SW1
+          mode: "active"                             # Use LACP active mode
+          interfaces:
+            - gi1/0/4                                # First member interface
+            - gi1/0/5                                # Second member interface
+
+      SW2:
+        - id: 24                                     # Port-channel 24 on SW2
+          mode: "active"                             # LACP active mode
+          interfaces:
+            - gi1/0/6                                # First member interface
+            - gi1/0/7                                # Second member interface
+        - id: 12                                     # Port-channel 12 on SW2
+          mode: "active"                             # LACP active mode
+          interfaces:
+            - gi1/0/4                                # First member interface
+            - gi1/0/5                                # Second member interface
+
+      SW4:
+        - id: 24                                     # Port-channel 24 on SW4
+          mode: "on"                                 # Force mode "on" (prevents LACP timeout)
+          interfaces:
+            - gi1/0/6                                # First member
+            - gi1/0/7                                # Second member
+
+  tasks:
+
+    #######################################################################
+    # 1) Configure all physical interfaces for each port-channel
+    #######################################################################
+    - name: Configure all member interfaces for each port-channel        # Task to configure physical interfaces
+      cisco.ios.ios_config:
+        lines:
+          - "channel-group {{ item.0.id }} mode {{ item.0.mode }}"       # Assign interface to port-channel with mode
+          - "no shutdown"                                                # Ensure interface is enabled
+        parents: "interface {{ item.1 }}"                                # Enter interface configuration mode
+        save_when: modified                                              # Save config only if changed
+      loop: "{{ switch_port_channels[inventory_hostname] | subelements('interfaces') }}"  # Iterate through PC + interfaces
+      loop_control:
+        label: "Port-channel {{ item.0.id }} → {{ item.1 }}"             # Clean log output for Ansible
+
+    #######################################################################
+    # 2) Configure each logical Port-Channel interface
+    #######################################################################
+    - name: Configure each port-channel interface                        # Task to configure port-channel interfaces
+      cisco.ios.ios_config:
+        lines:
+          - switchport mode trunk                                        # Set trunk mode
+          - no shutdown                                                  # Enable the port-channel
+        parents: "interface port-channel {{ item.id }}"                  # Enter port-channel interface mode
+        save_when: modified                                              # Save if needed
+      loop: "{{ switch_port_channels[inventory_hostname] }}"             # Loop through port-channel IDs
+      loop_control:
+        label: "Port-channel {{ item.id }}"                              # Cleaner task display

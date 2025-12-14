@@ -1,0 +1,56 @@
+---                          # Start of the YAML document
+- name: Configure VTP on Cisco Switches     # Name of the Ansible play
+  hosts: all                                # Run this play on all inventory hosts
+  gather_facts: no                          # Disable fact gathering for faster execution
+  collections:
+    - cisco.ios                             # Use the Cisco IOS Ansible collection
+
+  vars:                                     # Begin variable definitions
+
+    # -------------------------------
+    # Ansible Connection Variables
+    # -------------------------------
+
+    ansible_network_os: cisco.ios.ios       # Specify the network OS for the devices
+    ansible_connection: network_cli          # Use SSH network CLI connection method
+    ansible_user: admin                      # Username for device login
+    ansible_password: cisco                  # Password for device login
+    ansible_become: yes                      # Enable privilege escalation (enable mode)
+ 
+
+    # -------------------------------
+    # VTP Variables
+    # -------------------------------
+
+    vtp_domain: "KBITS"                      # Set the VTP domain name
+    vtp_version: "2"                         # Set the VTP version to 2
+    vtp_password: "kbits@123"                # Set the VTP password
+
+    # -------------------------------
+    # Group Names
+    # -------------------------------
+
+    vtp_server_group: "vtp_server"           # Inventory group containing VTP server switch(es)
+    vtp_client_group: "vtp_clients"          # Inventory group containing VTP client switches
+
+  tasks:                                     # Begin task list
+
+    - name: Configure VTP on SW1 (Server)    # Task to configure VTP server
+      when: inventory_hostname in groups[vtp_server_group]   # Run only if host is in the server group
+      ios_config:                            # Use the ios_config module to push configuration
+        lines:                               # List of configuration commands to apply
+          - "vtp mode server"                # Set VTP mode to server
+          - "vtp domain {{ vtp_domain }}"    # Apply VTP domain
+          - "vtp version {{ vtp_version }}"  # Apply VTP version
+          - "vtp password {{ vtp_password }}" # Apply VTP password
+        save_when: modified                  # Save config only if changes were made
+
+    - name: Configure VTP on Client Switches # Task to configure VTP clients
+      when: inventory_hostname in groups[vtp_client_group]   # Run only on client switches
+      ios_config:                            # Use the ios_config module to push configuration
+        lines:                               # List of configuration commands to apply
+          - "vtp domain {{ vtp_domain }}"    # Apply VTP domain
+          - "vtp version {{ vtp_version }}"  # Apply VTP version
+          - "vtp password {{ vtp_password }}" # Apply VTP password
+          - "vtp mode client"                # Set VTP mode to client
+        save_when: modified                  # Save config only if changes were made

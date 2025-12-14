@@ -1,0 +1,65 @@
+---
+- name: Check for interfaces that are down and send email alert  # Playbook description
+  hosts: all  # Run this play on all hosts in your inventory
+  gather_facts: no  # Don’t gather system facts (speeds up execution)
+  collections:
+    - cisco.ios  # Use the Cisco IOS collection for network modules
+
+  vars:
+    ansible_network_os: cisco.ios.ios  # Specify network OS for connection
+    ansible_connection: network_cli  # Use CLI connection to devices
+    ansible_user: admin  # Username for device login
+    ansible_password: cisco  # Password for device login
+    ansible_become: yes  # Enable privilege escalation
+    ansible_become_method: enable  # Use enable mode for Cisco devices
+
+    smtp_server: smtp.gmail.com  # SMTP server to send emails
+    smtp_port: 587  # SMTP port
+    email_from: manutd2013.dr@gmail.com  # Email sender
+    email_to: manutd2013.dr@gmail.com  # Email recipient
+    email_subject: "🚨 Network Alert: Interface Down Detected"  # Email subject
+
+  tasks:
+
+    - name: Run show ip interface brief  # Task to check interface statuses
+      ios_command:
+        commands:
+          - show ip interface brief  # Cisco IOS command to list interface status
+      register: interface_output  # Save output to variable for later processing
+
+    - name: Find interfaces that are not UP/UP  # Task to filter down interfaces
+      set_fact:
+        down_interfaces: >-  # Define a variable with interfaces that are down
+          {{
+            interface_output.stdout[0].splitlines()  # Split command output into lines
+            | select('search',
+              'GigabitEthernet|FastEthernet|TenGigabitEthernet|Ethernet')  # Only network interfaces
+            | reject('search', 'up +up')  # Exclude interfaces that are UP/UP
+            | list  # Convert the filtered result to a list
+          }}
+
+    - name: Send email alert if interfaces are down  # Task to notify via email
+      mail:
+        host: "{{ smtp_server }}"  # SMTP server
+        port: "{{ smtp_port }}"  # SMTP port
+        username: "{{ email_from }}"  # Email login
+        password: "{{ lookup('env', 'ANSIBLE_GMAIL_PASSWORD') }}"  # Password from environment
+        to: "{{ email_to }}"  # Recipient
+        from: "{{ email_from }}"  # Sender
+        subject: "{{ email_subject }}"  # Subject line
+        body: |  # Email body content
+          Device: {{ inventory_hostname }}  # Name of the device being reported
+
+          The following interfaces are NOT in UP/UP state:  # Message header
+
+          {% for intf in down_interfaces %}  # Loop over down interfaces
+          - {{ intf }}  # List each down interface
+          {% endfor %}
+
+          Please investigate.  # Closing message
+      when: down_interfaces | length > 0  # Only send email if there are down interfaces
+
+    - name: Report device is healthy  # Task to report healthy devices
+      debug:
+        msg: "✅ Device {{ inventory_hostname }} has all interfaces UP/UP"  # Debug message
+      when: down_interfaces | length == 0  # Only show if no interfaces are down

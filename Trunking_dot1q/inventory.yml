@@ -1,0 +1,8 @@
+switches:                                # Define a group of hosts called "switches"
+  hosts:                                  # Begin listing individual hosts in the group
+    SW1:                                  # Hostname identifier for the first switch
+      ansible_host: 192.168.1.50         # IP address used to connect to this switch
+      ansible_ssh_executable: pylibssh   # Specify the SSH backend to use (pylibssh in this case)
+    SW3:                                  # Hostname identifier for the second switch
+      ansible_host: 192.168.1.51         # IP address used to connect to this switch
+      ansible_ssh_executable: pylibssh   # Specify the SSH backend to use for this host

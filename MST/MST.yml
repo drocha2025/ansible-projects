@@ -1,0 +1,61 @@
+---
+- name: Configure Cisco MST                            # Defines the playbook name
+  hosts: switches                                     # Target group of devices from inventory
+  gather_facts: no                                    # Skip gathering facts (not needed for network devices)
+  connection: network_cli                              # Use SSH network_cli connection to devices
+
+  vars:
+    ansible_network_os: cisco.ios.ios                 # Specify the network OS (IOS/IOS-XE)
+    ansible_user: admin                               # Username for SSH login
+    ansible_password: cisco                           # Password for SSH login
+    ansible_become: yes                               # Use enable mode for privileged commands
+    ansible_become_method: enable                     # Method to escalate privileges
+    ansible_command_timeout: 90                       # Increase command timeout to handle slow responses
+
+    vlans:                                           # List of VLANs to create on the switch
+      - 10
+      - 20
+      - 30
+      - 40
+      - 50
+      - 60
+      - 70
+      - 80
+
+    mst_instances:                                   # Define MST instances and their VLAN mappings
+      - instance: 1
+        vlans: "10,20,30,40"
+      - instance: 2
+        vlans: "50,60,70,80"
+
+  tasks:
+    - name: Create VLANs                               # Task to create VLANs on the switch
+      cisco.ios.ios_config:
+        lines:
+          - vlan {{ item }}                            # Template to create each VLAN in the 'vlans' list
+      loop: "{{ vlans }}"                              # Loop over each VLAN in the list
+      save_when: modified                              # Save config only if changes were made
+
+    - name: Enable MST mode                            # Task to enable MST globally
+      cisco.ios.ios_config:
+        lines:
+          - spanning-tree mode mst                     # CLI command to switch MST mode on
+      save_when: modified                              # Save config only if changes were made
+
+    - name: Configure MST region                       # Task to configure MST region parameters
+      cisco.ios.ios_config:
+        parents:
+          - spanning-tree mst configuration            # Enter MST configuration sub-mode
+        lines:
+          - name Automation                            # Set MST region name
+          - revision 1                                 # Set MST revision number (must match across switches)
+      save_when: modified                              # Save config only if changes were made
+
+    - name: Configure MST instances                    # Task to map VLANs to MST instances
+      cisco.ios.ios_config:
+        parents:
+          - spanning-tree mst configuration            # Enter MST configuration sub-mode
+        lines:
+          - instance {{ item.instance }} vlan {{ item.vlans }}  # Map each MST instance to its VLANs
+      loop: "{{ mst_instances }}"                        # Loop over each MST instance defined in vars
+      save_when: modified                                # Save config only if changes were made

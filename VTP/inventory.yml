@@ -1,0 +1,7 @@
+[vtp_server]
+SW1 ansible_host=192.168.1.51
+
+[vtp_clients]
+SW2 ansible_host=192.168.1.52
+SW3 ansible_host=192.168.1.53
+SW4 ansible_host=192.168.1.54
