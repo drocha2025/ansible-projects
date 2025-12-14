@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 all:
   hosts:
     switch1:
@@ -12,18 +11,4 @@ all:
     ansible_password: automation
     ansible_network_os: cisco.ios.ios
     ansible_connection: ansible.netcommon.network_cli
-=======
-all:
-  hosts:
-    switch1:
-      ansible_host: 192.168.1.2
-    switch2:
-      ansible_host: 192.168.1.3
-    switch3:
-      ansible_host: 192.168.1.4
-  vars:
-    ansible_user: admin
-    ansible_password: automation
-    ansible_network_os: cisco.ios.ios
-    ansible_connection: ansible.netcommon.network_cli
->>>>>>> 71579013ceb74eacfdb5497cbdd634346bfe5746
+
